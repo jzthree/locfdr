@@ -10,7 +10,9 @@
 }
 
 \usage{
-locfdr(zz, bre = 120, df = 7, pct = 1/1000, pct0 = 2/3, nulltype = 1, type = 0)
+locfdr(zz, bre = 120, df = 7, pct = 1/1000, pct0 = 2/3, nulltype = 1,
+type = 0, plot.fdr = FALSE, plot.density = FALSE, dev = dev.cur(),
+lwd=2, col=c("blue", "red"))
 }
 
 \arguments{
@@ -56,6 +58,17 @@ locfdr(zz, bre = 120, df = 7, pct = 1/1000, pct0 = 2/3, nulltype = 1, type = 0)
     [so total degrees of freedom df+1 including the intercept.] The
     default is type=0. 
   }
+  \item{plot.fdr}{Whether an fdr plot is to be displayed. Default is FALSE.
+  }
+  
+  \item{plot.density}{Whether a plot of the two densities f0 and f is
+    to be displayed. Defaul is FALSE.
+  }
+  
+  \item{dev}{The device used for plotting, by default the current
+    device}
+  \item{lwd}{The width of the lines in the plot, default=2}
+  \item{col}{The colors used in the plot, default=c("blue", "red")}
 }
 
 \value{
