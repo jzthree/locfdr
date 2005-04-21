@@ -31,7 +31,7 @@ pdftitle={Local FDR Simulation Example}]{hyperref}
 
 
 
-\usepackage{/home/depot/swtree/depot/R-1.9.1/lib/R/share/texmf/Sweave}
+\usepackage{/home/depot/swtree/depot/R-2.0.1/lib/R/share/texmf/Sweave}
 \begin{document}
 %\VignetteIndexEntry{Local FDR}
 %\VignetteKeywords{FDR, local FDR}
@@ -67,9 +67,10 @@ zero, but with no obvious second mode near $z=3$.
 \end{Schunk}
 \includegraphics{locfdr-example-Histogram}
 
-The \texttt{locfdr} package allows us to compute the fdr values for
-the 2000 genes, the descriptive vector \texttt{f0.p0} and a $119\times
-7$ matrix of local fdr values.
+The \texttt{locfdr} package allows us to compute the fdr, the
+individual fdr values for the 2000 genes, the descriptive vector
+\texttt{f0.p0} and a $119\times 7$ matrix of results including the
+local fdr. 
 
 \begin{Schunk}
 \begin{Sinput}
@@ -87,13 +88,12 @@ Let's examine \texttt{f0.p0}.
 > print(w$f0.p0)
 \end{Sinput}
 \begin{Soutput}
-      zmax        sig         p0 
-0.02138590 0.97936902 0.91644463 
+NULL
 \end{Soutput}
 \end{Schunk}
 
 The above indicates that the empirical null $f_0(z)$ was estimated to
-be $N(.0214,.979^2)$, and that the estimated proportion of null cases
+be $N(.0226,.979^2)$, and that the estimated proportion of null cases
 is 0.916. (The fitting method is conservative in the sense of tending
 to overestimate the true null proportion.) In this case the empirical
 null has done a good job of estimating what we happen to know is the

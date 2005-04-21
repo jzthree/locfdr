@@ -61,9 +61,10 @@ zero, but with no obvious second mode near $z=3$.
 hist(zex, breaks=seq(-3.4,7.2,.2), xlab="z-value")
 @ 
 
-The \texttt{locfdr} package allows us to compute the fdr values for
-the 2000 genes, the descriptive vector \texttt{f0.p0} and a $119\times
-7$ matrix of local fdr values.
+The \texttt{locfdr} package allows us to compute the fdr, the
+individual fdr values for the 2000 genes, the descriptive vector
+\texttt{f0.p0} and a $119\times 7$ matrix of results including the
+local fdr. 
 
 <<Compute the local fdr>>=
 w <- locfdr(zex)
@@ -76,7 +77,7 @@ print(w$f0.p0)
 @ 
 
 The above indicates that the empirical null $f_0(z)$ was estimated to
-be $N(.0214,.979^2)$, and that the estimated proportion of null cases
+be $N(.0226,.979^2)$, and that the estimated proportion of null cases
 is 0.916. (The fitting method is conservative in the sense of tending
 to overestimate the true null proportion.) In this case the empirical
 null has done a good job of estimating what we happen to know is the
