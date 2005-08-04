@@ -1,5 +1,6 @@
-locfdr <- function(zz, bre = 120, df = 7, pct = 1/1000, pct0 = 1/3, nulltype = 1,
-                   type = 0, plot = 1) {
+locfdr <- function(zz, bre = 120, df = 7, pct = 1/1000, pct0 = 1/4, nulltype = 1,
+                   type = 0, plot = 1, sig0, main = " ") {
+  ## pct0 CHANGED
   ## use  help(locfdr) for definitions and suggestions
   require("splines")
   if(length(bre) > 1) {
@@ -47,8 +48,8 @@ locfdr <- function(zz, bre = 120, df = 7, pct = 1/1000, pct0 = 1/3, nulltype = 1
   D <- (y - f)/(f + 1)^0.5
   D <- sum(D[2:(K - 1)]^2)/(K - 2 - df)
   if(D > 1.5) {
-    print(paste("CHECK FIT, INCREASE DF?  MISFIT=", round(
-                                                          D, 1)))
+    print(paste("CHECK FIT, INCREASE DF?  MISFIT=",
+                round(D, 1)))
   }
   ## ..............begin f0 calcs................................
   imax <- seq(l)[l == max(l)][1]
@@ -61,8 +62,8 @@ locfdr <- function(zz, bre = 120, df = 7, pct = 1/1000, pct0 = 1/3, nulltype = 1
     pctlo <- pct0[1]
     pctup <- pct0[2]
   }
-  lo0 <- quantile(zz[zz < xmax], pctlo)
-  hi0 <- quantile(zz[zz > xmax], pctup)
+  lo0 <- quantile(zz, pctlo)
+  hi0 <- quantile(zz, pctup)
   nx <- length(x)
   i0 <- (1.:nx)[x > lo0 & x < hi0]
   x0 <- x[i0]
@@ -82,8 +83,10 @@ locfdr <- function(zz, bre = 120, df = 7, pct = 1/1000, pct0 = 1/3, nulltype = 1
   }
   else {
     X0 <- cbind(1, x - xmax, (x - xmax)^2)
-    sighat <- 1./sqrt(-2. * co[3.])
     xmaxx <-  - co[2.]/(2. * co[3.]) + xmax
+    if(!missing(sig0))
+      co[3] = 1/(-2 * sig0^2)
+    sighat <- 1./sqrt(-2. * co[3.])
     fp0 <- c(xmaxx, sighat)
   }
   l0 <- as.vector(X0 %*% co)
@@ -94,14 +97,24 @@ locfdr <- function(zz, bre = 120, df = 7, pct = 1/1000, pct0 = 1/3, nulltype = 1
   fp0 <- c(fp0, p0)
   if(nulltype == 2)
     names(fp0) <- c("zmax", "sigleft", "sigright", "p0")
-  else names(fp0) <- c("zmax", "sig", "p0")
+  else {
+    cp <- qnorm(1 - pct0)
+    x1 <- xmaxx - cp * sighat
+    x2 <- xmaxx + cp * sighat
+    Pp <- sum(zz >= x1 & zz <= x2)/N
+    sigp <- (sighat * cp)/qnorm((1 + Pp)/2)
+    if(sigp/sighat < 9/10)
+      print("Try sig0=sigpct? (sigpct<.90*sighat)")
+  }
   f00 <- exp( - x^2/2)
-  f00 <- (f00 * sum(f[i0]))/sum(f00[i0])
+  f00 <- (f00 * sum(f))/sum(f00)
   fdr0 <- pmin(f00/f, 1)
-  p0theo <- sum(f00)/sum(f)
-  f00 <- f00/p0theo
+  p0theo <- sum(f[i0])/sum(f00[i0])
   fp0 <- c(fp0, p0theo)
-  names(fp0)[length(fp0)] <- "p0theo"
+  if(nulltype < 2) {
+    fp0 <- c(fp0, sigp)
+    names(fp0) <- c("zmax", "sig", "p0", "p0theo", "sigpct")
+  }
   f0p <- p0 * f0
   if(nulltype == 0)
     f0p <- p0theo * f00
@@ -128,14 +141,14 @@ locfdr <- function(zz, bre = 120, df = 7, pct = 1/1000, pct0 = 1/3, nulltype = 1
   Efdrtheo <- sum((1 - fdr0) * fdr0 * fall)/sum((1 - fdr0) * fall)
   iup <- (1:K)[x >= xmax]
   ido <- (1:K)[x <= xmax]
-  Eleft <- sum((1 - fdr[ido]) * fdr[ido] * fall[ido])/
-    sum((1 - fdr[ido]) * fall[ido])
-  Eleft0 <- sum((1 - fdr0[ido]) * fdr0[ido] * fall[ido])/
-    sum((1 - fdr0[ido]) * fall[ido])
-  Eright <- sum((1 - fdr[iup]) * fdr[iup] * fall[iup])/
-    sum((1 - fdr[iup]) * fall[iup])
-  Eright0 <- sum((1 - fdr0[iup]) * fdr0[iup] * fall[iup])/
-    sum((1 - fdr0[iup]) * fall[iup])
+  Eleft <- sum((1 - fdr[ido]) * fdr[ido] * fall[ido])/sum((1 - fdr[
+                                                                   ido]) * fall[ido])
+  Eleft0 <- sum((1 - fdr0[ido]) * fdr0[ido] * fall[ido])/sum((1 -
+                                                              fdr0[ido]) * fall[ido])
+  Eright <- sum((1 - fdr[iup]) * fdr[iup] * fall[iup])/sum((1 - fdr[
+                                                                    iup]) * fall[iup])
+  Eright0 <- sum((1 - fdr0[iup]) * fdr0[iup] * fall[iup])/sum((
+                                                               1 - fdr0[iup]) * fall[iup])
   Efdr <- c(Efdr, Eleft, Eright, Efdrtheo, Eleft0, Eright0)
   names(Efdr) <- c("Efdr", "Eleft", "Eright", "Efdrtheo", "Eleft0",
                    "Eright0")
@@ -175,11 +188,9 @@ locfdr <- function(zz, bre = 120, df = 7, pct = 1/1000, pct0 = 1/3, nulltype = 1
                             "lfdrsetheo")
   dimnames(mat) <- list(NULL, namat)
   if(plot > 0) {
-    if (plot > 1) {
-      par(mfrow= c(1,2))
-    }
-
-    hist(zzz, breaks = breaks, xlab = " ")
+    if(plot > 1)
+      oldpar <- par(mfrow = c(1, 2), pty = "m")
+    hist(zzz, breaks = breaks, xlab = " ", main = main)
     yt <- yall * (1 - fd)
     for(k in 1:K)
       lines(c(x[k], x[k]), c(0, yt[k]), lwd = 2, col = 6
@@ -194,45 +205,60 @@ locfdr <- function(zz, bre = 120, df = 7, pct = 1/1000, pct0 = 1/3, nulltype = 1
               " sighat=", round(sighat, 3), "p0=", round(
                                                          fp0[3], 3)))
     lines(x, f, lwd = 3, col = 3)
-    lines(x, f0, lwd = 2, lty = 2, col = 4)
-    z2hi <- approx(fd[x > 0], x[x > 0], 0.2)$y
-    z2lo <- approx(fd[x < 0], x[x < 0], 0.2)$y
+    if(nulltype == 0)
+      lines(x, f00, lwd = 2, lty = 2, col = 4)
+    else {
+      lines(x, f0, lwd = 2, lty = 2, col = 4)
+    }
+    z2hi <- approx(fd[x > 0], x[x > 0], 0.20000000000000001, ties="ordered")$y
+    z2lo <- approx(fd[x < 0], x[x < 0], 0.20000000000000001, ties="ordered")$y
     if(!is.na(z2hi))
-      points(z2hi, 0, pch = 15)
+      points(z2hi, 0, pch = 17)
     if(!is.na(z2lo))
-      points(z2lo, 0, pch = 15)
+      points(z2lo, 0, pch = 17)
     if(nulltype == 1)
       Ef <- Efdr[1]
     else Ef <- Efdr[4]
-
     if(plot == 2) {
+      if(nulltype == 0)
+        fdd <- fdr0
+      else fdd = fdr
       matplot(x, cbind(fdr, Fdrl, Fdrr), type = "l",
               lwd = 3, xlab = " ", ylim = c(0, 
-                                     1.1000000000000001), main = 
-              "fdr (solid); Fdr's (dashed)")
+                                     1.1000000000000001),
+              main = "fdr (solid); Fdr's (dashed)")
       title(xlab = paste("Efdr= ", round(Ef, 3)))
       abline(0, 0, lty = 3, col = 2)
       lines(c(0, 0), c(0, 1), lty = 3, col = 2)
     }
     if(plot == 3) {
-      plot(cdf1[, 1], cdf1[, 2], type = "l", lwd = 3,
-           xlab = "fdr level", ylim = c(0, 1), ylab
-           = "f1 proportion < fdr level", main = 
-           "f1 cdf of estimated fdr")
-      title(sub = paste("Efdr= ", round(Ef, 3)))
-      lines(c(0.20000000000000001, 0.20000000000000001),
-            c(0, cdf1[20, 2]), col = 4, lty = 2)
-      lines(c(0, 0.20000000000000001), rep(cdf1[20,
-                                                2], 2), col = 4, lty = 2)
-      text(0.050000000000000003, cdf1[20, 2], round(
-                                                    cdf1[20, 2], 2))
-      abline(0, 0, col = 2)
-      lines(c(0, 0), c(0, 1), col = 2)
+      if(sum(is.na(cdf1[, 2])) == nrow(cdf1))
+        print("cdf1 not available")
+      else {
+        plot(cdf1[, 1], cdf1[, 2], type = "l",
+             lwd = 3, xlab = "fdr level", ylim
+             = c(0, 1), ylab = 
+             "f1 proportion < fdr level", main = "f1 cdf of estimated fdr")
+        title(sub = paste("Efdr= ", round(Ef,
+                3)))
+        lines(c(0.20000000000000001, 
+                0.20000000000000001), c(0, cdf1[
+                                                20, 2]), col = 4, lty = 2)
+        lines(c(0, 0.20000000000000001), rep(
+                                             cdf1[20, 2], 2), col = 4, lty = 2)
+        text(0.050000000000000003, cdf1[20, 2],
+             round(cdf1[20, 2], 2))
+        abline(0, 0, col = 2)
+        lines(c(0, 0), c(0, 1), col = 2)
+      }
     }
+    if(plot > 1)
+      par(oldpar)
   }
   if(nulltype == 0) {
-    ffdr <- approx(x, fdr0, zz, rule = 2)$y
+    ffdr <- approx(x, fdr0, zz, rule = 2, ties="ordered")$y
   }
-  else ffdr <- approx(x, fdr, zz, rule = 2)$y
+  else ffdr <- approx(x, fdr, zz, rule = 2, ties="ordered")$y
   list(fdr = ffdr, fp0 = fp0, Efdr = Efdr, cdf1 = cdf1, mat = mat)
 }
+

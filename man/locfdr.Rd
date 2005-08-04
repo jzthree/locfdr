@@ -7,13 +7,14 @@
 \description{
   Compute local false discovery rates, following the definitions and
   description in Efron (2004) JASA, Volume 99, pages 96--104 and
-  Efron, B (2005) "Local false discovery rates"
+  Efron, B (2005) "Local false discovery rates" and Efron, B. (2005)
+  "Correlation and large-scale simultaneous significance testing" 
   \url{http://www-stat.stanford.edu/~brad/papers/}. 
 }
 
 \usage{
-locfdr(zz, bre = 120, df = 7, pct = 1/1000, pct0 = 1/3, nulltype = 1,
-type = 0, plot = 1)
+locfdr(zz, bre = 120, df = 7, pct = 1/1000, pct0 = 1/4, nulltype = 1,
+type = 0, plot = 1, sig0, main = " ")
 }
 
 \arguments{
@@ -77,9 +78,17 @@ type = 0, plot = 1)
     the estimated fdr curve, as in figure 6 of the second reference above.
   }
 
+  \item{sig0} {If specified, sig0 determines the standard deviation of
+    the empirical null hypothesis (as described above in "nulltype".)
+    See "fp0" description below for suggested use of sig0.
+  }
+
+  \item{main} { The main legend for the histogram.
+  }
+  
 }
 \value{
-  A list with three components.
+  A list with five components.
   \item{fdr} the estimated local false discovery rates for each case,
   using the selected options for type and nulltype.
 
@@ -87,7 +96,12 @@ type = 0, plot = 1)
   nulltype 1 or 2, the estimated proportion p0 of
   null cases, and also p0theo, the p0 estimate for nulltype=0,
   labelled "p0theo".( The "theo" suffix indicates nulltype=0
-  results below also.)
+  results below also.) Also "sigpct", an estimate of null standard
+  deviation related to the interquartile range; sigpct is more
+  robust than the default estimate "sig", but can be upwardly
+  biased. If sigpct is less than .90*sig a warning message is
+  shown. This suggests rerunning locfdr with the input parameter
+  "sig" set equal to the value of sigpct.
 
   \item{Efdr} the expected false discovery rate for the Non-Null cases,
   a measure of the experiment's power as described in Section 5
@@ -123,12 +137,22 @@ type = 0, plot = 1)
   The density estimates f, f0 , f0theo are scaled to add up to
   approximately the number of zz's. The non-null density \eqn{f1} is scaled
   to add up to approximately (1-p0) times the number of zz's.
+
+  The empirical null estimate of standard deviation can be thrown
+  off by irregularities in the central z-value counts. It is a good
+  idea to inspect the z-value histogram (the first plot), and
+  to try the "sig0" option if anomalies are suspected.	
+
 }
 
 \references{Efron, B. (2004) \emph{Large-scale simultaneous hypothesis
     testing: the choice of a null hypothesis}, JASA, Vol. 99, pp 96-104
 
   Efron, B. (2005). \emph{Local False Discovery Rates},
+  \url{http://www-stat.stanford.edu/~brad/papers/} 
+
+  Efron, B. (2005). \emph{Correlation and large-scale simultaneous
+    significance testing},
   \url{http://www-stat.stanford.edu/~brad/papers/} 
 }
 \author{Bradley Efron}
