@@ -17,12 +17,12 @@
 \usepackage[pdftex,
 bookmarks,
 bookmarksopen,
-pdfauthor={Bradley Efron, Balasubramanian Narasimhan},
+pdfauthor={Bradley Efron, Brit Turnbull and Balasubramanian Narasimhan},
 pdftitle={Local FDR Simulation Example}]{hyperref}
 
 
 \title{Local FDR Simulation Example}
-\author{Bradley Efron and Balasubramanian Narasimhan\\
+\author{Bradley Efron, Brit Turnbull and Balasubramanian Narasimhan\\
   Department of Statistics\\
   Stanford University\\ 
   Stanford, CA 94305}
@@ -37,13 +37,12 @@ pdftitle={Local FDR Simulation Example}]{hyperref}
 %\VignettePackage{locfdr}
 \maketitle
 
-\section{A Simulated Example}
 This simulation example involves 2000 ``genes'', each of which has
-yielded a test statistic $z_i$, with $z_i \approx N(mu_i, 1)$,
+yielded a test statistic $z_i$, with $z_i \approx N(\mu_i, 1)$,
 independently for $i=1,2,\ldots,2000$.
 
-Here $mu_i$ is the ``true score'' of gene $i$, which we observe only
-noisily. 1800 (90\%) of the $\mu$ values are zero; the remaining 200
+Here $\mu_i$ is the ``true score'' of gene $i$, which we observe only
+noisily. 1800 (90\%) of the $\mu_i$ values are zero; the remaining 200
 (10\%) are from a $N(3,1)$ distribution. The data are contained in the
 dataset \texttt{lfdrsim}, where the $z_i$ are the column \texttt{zex}.  
 
@@ -53,68 +52,72 @@ data(lfdrsim)
 zex <- lfdrsim[, 2]
 @ 
 
-A histogram shows that the $z_i$ have a long tail to the right of
-zero, but with no obvious second mode near $z=3$.
+If we are confident that the null $z_i$'s are distributed as $N(0,1)$,
+we run \texttt{locfdr} with \texttt{nulltype=0}.  Otherwise, we use
+the default \texttt{nulltype=1}, which uses empirical estimates of the
+null density parameters.
 
-
-<<Histogram, fig=TRUE>>=
-hist(zex, breaks=seq(-3.4,7.2,.2), xlab="z-value")
-@ 
-
-The \texttt{locfdr} package allows us to compute the fdr, the
-individual fdr values for the 2000 genes, the descriptive vector
-\texttt{f0.p0} and a $119\times 7$ matrix of results including the
-local fdr. 
-
-<<Compute the local fdr>>=
+<<Compute-local-fdr, fig=TRUE, echo=TRUE>>=
 w <- locfdr(zex)
 @ 
 
-Let's examine \texttt{f0.p0}. 
+In the figure, the green solid line is the spline-based estimate of
+the mixture density $f$.  The blue dashed line is the empirical null
+subdensity $p_0f_0$, estimated by default by maximum likelihood
+(nulltype=1).  Whichever nulltype is specified, \texttt{locfdr}
+returns a matrix \texttt{fp0} containing parameters of all three
+nulltypes and corresponding estimates of the proportion $p_0$ of cases
+that are null, along with standard errors.  In this example, the null
+distribution is $N(0,1)$, and both the MLE and central matching
+estimates come close to this.
 
-<<Print f0.p0>>=
-print(w$f0.p0)
+
+<<Show fp0>>=
+w$fp0
 @ 
 
-The above indicates that the empirical null $f_0(z)$ was estimated to
-be $N(.0226,.979^2)$, and that the estimated proportion of null cases
-is 0.916. (The fitting method is conservative in the sense of tending
-to overestimate the true null proportion.) In this case the empirical
-null has done a good job of estimating what we happen to know is the
-true $N(0,1)$ null.
+The function \texttt{locfdr} returns, in the output \texttt{mat}, the bin centers
+\texttt{x}, and, at each \texttt{x}, the following values:
+\begin{description}
+\item[fdr] local false discovery rate based on the specified nulltype
+\item[Fdrleft, Fdrright] tail false discovery rates
+\item[f] the mixture density estimate calculated using the type and df
+  arguments, scaled to sum to the number of $z_i$'s.
+\item[f0] the null density estimate calculated using the nulltype argument (using nulltype=1 if nulltype=0 is specified)
+\item[f0theo] the null density estimate calculated using the theoretical null $N(0,1)$
+\item[fdrtheo] the local false discovery rate based on the theoretical null $N(0,1)$
+\item[counts] the number of $z_i$'s in the bin
+\item[lfdrse] the delta-method estimate of the standard error of the log of the local false discovery rate for the specified nulltype
+\item[p1f1] the estimated subdensity of the non-null $z_i$'s
+\end{description}
 
-We now add the fdr plot to the histogram (scaled up by a factor of
-100).
-
-<<FDR-Plot, fig=TRUE>>=
-hist(zex, breaks=seq(-3.4,7.2,.2), xlab="z-value", main="Histogram of zex with 100.fdr") 
-lines(w$mat[,1], 100*w$mat[,2], lwd=3)
+<<Show mat>>=
+w$mat[1:5,]
 @ 
 
-This shows that the only small $fdr(z)$ values are on the right side, as
-they should be, with $fdr(z)$ declining to zero as $z$ goes from 2 to
-4. 
+The \texttt{fdr} in the result contains the local false discovery rate
+for each $z_i$.  One might use this vector to create a list of
+Interesting cases.
 
-We can now compute $z$ such that $fdr(z)=0.2$.
-
-<<Compute z for FDR .2>>=
-zp <- approx(w$mat[,2], w$mat[,1], .2)
-print(zp)
+<<list interesting cases>>=
+which(w$fdr<.2)
 @ 
 
-So, $fdr(2.79) = 0.2$. We now compute how many genes have fdr
-less than $0.2$.
+Here $0.2$ is a rule-of-thumb cut-off.  In the simulated data, the
+first 200 cases have nonzero $\mu_i$.  So we can find the true tail
+FDR.
 
-<<Number of Genes with FDR less than .2>>=
-sum(zex > zp$y)
+<<true tail FDR>>=
+sum(which(w$fdr<.2)>200)/sum(w$fdr<.2)
 @ 
 
-Thus, we have 117 genes with fdr less than .2. Of these 117, only 4
-are actually Nulls, i.e. have $\mu_i=0$. This is in rough agreement
-with the tail area Fdr, \texttt{Fdrleft}, which equals .041 at
-$z=2.79$. The fact that the local fdr is nearly five times greater, .2
-compared to .041, shows that genes near the boundary point 2.79 are
-much more likely to be false discoveries than the average gene having
-$z > 2.79$.
+The estimated tail FDR can be found from the \texttt{mat} output.
+
+<<tail FDR>>=
+w$mat[which(w$mat[,"fdr"]<.2)[1],"Fdrright"]
+@ 
+
+The tail FDR is the mean local fdr over the entire tail and is
+therefore smaller than the local fdr cutoff.
 
 \end{document}
