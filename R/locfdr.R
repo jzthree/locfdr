@@ -1,5 +1,7 @@
-locfdr = function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type = 
-	0, plot = 1, mult, main = " ", sw = 0) {
+locfdr <-
+function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type = 0, plot = 1, mult, mlests, main = " ", sw = 0)
+{
+  call = match.call()
 	if(length(bre) > 1) {
 		lo <- min(bre)
 		up <- max(bre)
@@ -115,15 +117,19 @@ locfdr = function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type
 	  fp0["cmest", 3] <- p0
         }
 	#............... begin MLE f0 calcs ........................
-        mlests = locmle(zz, xlim=c(0, 2))
+        b = 3.55 - 0.44*log(N, 10)
+        if(missing(mlests)){
+          med = median(zz);sc=diff(quantile(zz)[c(2,4)])/(2*qnorm(.75))
+          mlests = locmle(zz, xlim=c(med, b*sc))
+        }
 	if (!is.na(mlests[1])) {
             if (nulltype == 1) {
               Cov.in = list(x=x, X=X, f=f, i0=i0, sw=sw)
-              ml.out = locmle(zz, xlim = c(mlests[1], 2 * mlests[2]),
+              ml.out = locmle(zz, xlim = c(mlests[1], b * mlests[2]),
                 d=mlests[1], s=mlests[2], Cov.in=Cov.in)
               mlests = ml.out$mle
             }
-            else  mlests = locmle(zz, xlim = c(mlests[1], 2 * mlests[2]),
+            else  mlests = locmle(zz, xlim = c(mlests[1], b * mlests[2]),
                 d=mlests[1], s=mlests[2])
             fp0["mlest", 1:3] = mlests[1:3]
             fp0["mleSD", 1:3] = mlests[4:6]
@@ -155,12 +161,6 @@ locfdr = function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type
 		f0 = (sum(f) * f0)/sum(f0)
 	}
         fdr = pmin((p0 * f0)/f, 1)
-	if (nulltype < 3) {
-		cp <- qnorm(1 - pct0)
-		x1 <- xmaxx - cp * sighat
-		x2 <- xmaxx + cp * sighat
-		Pp <- sum(zz >= x1 & zz <= x2)/N
-	}
 	f00 <- exp( - x^2/2)
 	f00 <- (f00 * sum(f))/sum(f00)
 	p0theo <- sum(f[i0])/sum(f00[i0])
@@ -297,6 +297,18 @@ locfdr = function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type
 		namat[c(3, 4, 10)] <- c("Fdrltheo", "Fdrrtheo", 
 			"lfdrsetheo")
 	dimnames(mat) <- list(NULL, namat)
+        ############## Locations of triangles ###########
+        z.2 = rep(NA, 2)
+        m = order(fd)[nx]
+        if (fd[nx] < 0.2) {
+          z.2[2] = approx(fd[m:nx], x[m:nx], 0.20000000000000001,
+                               ties=mean)$y
+        }
+        if (fd[1] < 0.2) {
+          z.2[1] = approx(fd[1:m], x[1:m], 0.20000000000000001,
+                              ties=mean)$y
+        }
+        ################### Plotting ####################
 	if(plot > 0) {
 		if(plot == 2 | plot == 3)
 			oldpar <- par(mfrow = c(1, 2), pty = "m")
@@ -322,23 +334,15 @@ locfdr = function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type
                                             "p0:", round(fp0["cmest", 3], 3)))
 		lines(x, f, lwd = 3, col = 3)
 		if(nulltype == 0)
-			lines(x, f00, lwd = 2, lty = 2, col = 4)
+			lines(x, p0theo*f00, lwd = 2, lty = 2, col = 4)
 		else {
-			lines(x, f0, lwd = 2, lty = 2, col = 4)
+			lines(x, p0*f0, lwd = 2, lty = 2, col = 4)
 		}
-                m = order(fd)[nx]
-                if (fd[nx] < 0.2) {
-                  z2hi <- approx(fd[m:nx], x[m:nx], 0.20000000000000001,
-                               ties=mean)$y
-                  if (!is.na(z2hi))
-			points(z2hi, -0.5, pch = 24, col="red", bg="yellow")
-                }
-                if (fd[1] < 0.2) {
-                  z2lo <- approx(fd[1:m], x[1:m], 0.20000000000000001,
-                              ties=mean)$y
-                  if(!is.na(z2lo))
-			points(z2lo, -0.5, pch = 24, col="red", bg="yellow")
-                }
+                ################## Plot triangles ###############
+                if (!is.na(z.2[2]))
+		   points(z.2[2], -0.5, pch = 24, col="red", bg="yellow")
+                if(!is.na(z.2[1]))
+		   points(z.2[1], -0.5, pch = 24, col="red", bg="yellow")
 		if(nulltype == 1 | nulltype ==2)
 			Ef <- Efdr[1]
 		else if (nulltype == 0) Ef <- Efdr[4]
@@ -383,8 +387,11 @@ locfdr = function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type
 		ffdr <- approx(x, fdr0, zz, rule = 2, ties="ordered")$y
 	}
 	else ffdr <- approx(x, fdr, zz, rule = 2, ties="ordered")$y
-	vl = list(fdr = ffdr, fp0 = fp0, Efdr = Efdr, cdf1 = cdf1,  mat = mat)
+	vl = list(fdr = ffdr, fp0 = fp0, Efdr = Efdr, cdf1 = cdf1,  mat = mat,
+          z.2 = z.2)
 	if(!missing(mult))
 		vl$mult = EE
+        vl$call = call
 	vl
 }
+

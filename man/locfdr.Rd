@@ -6,32 +6,21 @@
 
 \description{
   Compute local false discovery rates, following the definitions and
-  description in Efron (2004) JASA, Volume 99, pages 96--104 and
-  Efron, B (2005) "Local false discovery rates" and Efron, B. (2005)
-  "Correlation and large-scale simultaneous significance testing" 
-  \url{http://www-stat.stanford.edu/~brad/papers/}. 
-}
+  description in references listed below.}
 
 \usage{
-locfdr(zz, bre=120, df=7, pct=0, pct0=1/4, nulltype=1, type=0, plot=1,
-	mult, main=" ", sw=0)
+locfdr(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type =
+0, plot = 1, mult, mlests, main = " ", sw = 0)
 }
 
 \arguments{
   \item{zz}{A vector of summary statistics, one for each case under
-  simultaneous consideration. In a microarray experiment there would be
-  one component of \eqn{zz} for each gene, perhaps a
-  \eqn{t}-statistic comparing gene expression levels under two
-  different conditions. Results may be improved by transforming
-  \eqn{zz} so that its components are theoretically distributed
-  as \eqn{N(0,1)} under the null hypothesis, for example via
-  \code{z[i] = qnorm(pt(t[i],df))} when using
-  \eqn{t}-statistics. This is especially important when the
-  theoretical null option is invoked (see below). Recentering
-  and rescaling \eqn{zz} may be necessary if its central
-  histogram looks very far removed from mean 0 and variance 1.
-  The calculations  assume a large number of cases, say at least
-  \code{length(zz)} exceeding 200.}
+  simultaneous consideration.  The
+  calculations  assume a large number of cases, say
+  \code{length(zz)} exceeding 200.  Results may be improved by transforming
+  zz so that its elements are theoretically distributed
+  as \eqn{N(0,1)} under the null hypothesis.  See the locfdr vignette
+  for tips on creating zz.}
 
 \item{bre}{Number of breaks in the discretization of the \eqn{z}-score axis,
         or a vector of breakpoints fully describing the
@@ -40,12 +29,8 @@ locfdr(zz, bre=120, df=7, pct=0, pct0=1/4, nulltype=1, type=0, plot=1,
         lower than the default of 120.}
 
 \item{df}{Degrees of freedom for fitting the estimated
-        density \eqn{f(z)}. Larger values of df may be required if
-        \eqn{f(z)} has sharp bends or other irregularities. A warning
-        is issued if the fitted curve does not adequately match the
-        histogram counts. It is a good idea to use the plot option to
-        view the histogram and fitted curve.}
-
+        density \eqn{f(z)}.}
+      
 \item{pct}{Excluded tail proportions of \eqn{zz}'s when fitting
 	   \eqn{f(z)}. \code{pct=0} includes full range of \eqn{zz}'s. pct can
 	   also be a 2-vector, describing the fitting range.}
@@ -56,101 +41,73 @@ locfdr(zz, bre=120, df=7, pct=0, pct0=1/4, nulltype=1, type=0, plot=1,
 	    pct0[2]] is used.  If a scalar, [pct0, 1-pct0] is used.}
 
 \item{nulltype}{Type of null hypothesis assumed in estimating \eqn{f0(z)},
-	for use in the fdr calculations; 0 is 
-	theoretical null \eqn{N(0,1)} [which assumes that the original \eqn{zz}
-	scores have been scaled to have a \eqn{N(0,1)} distribution under
-	the null hypothesis]; 1 (the default) is the empirical null
-	with parameters estimated by maximum likelihood; 2 is the
-        empirical null
-	with parameters estimated by central matching (see
-	second reference); 3 is a "split normal" version of 2, in
-	which \eqn{f0(z)} is allowed to have different
-	scales on the two sides of the maximum.  Unless \eqn{sw==2} or
-	\eqn{3}, the theoretical, maximum
-	likelihood, and central matching estimates all will be output in
-	the matrix fp0, and both the theoretical and the specified
-	nulltype will be used in the calculations output in mat, but
-	only the specified nulltype is used in the calculation of the
-	output fdr (local fdr estimates for every case).}
+	for use in the fdr calculations.  0 is the theoretical null
+	\eqn{N(0,1)}, 1 is maximum likelihood estimation, 2 is central
+	matching estimation, 3 is a split normal version of 2.}
 
-\item{type}{Type of fitting used for \eqn{f(z)}; 0 is a natural spline, 1 is
+\item{type}{Type of fitting used for \eqn{f}; 0 is a natural spline, 1 is
 	a polynomial, in either case with degrees of freedom df [so
 	total degrees of freedom including the intercept is \code{df+1}.]}
 
-\item{plot}{Plots desired. plot=0 gives no plots. plot=1 gives single
+\item{plot}{Plots desired.  0 gives no plots. 1 gives single
 	    plot showing the histogram of \eqn{zz} and fitted
-	    densities \eqn{f(z)} and \eqn{f0(z)}; colored histogram
-	    bars indicate estimated non-null counts; yellow triangles
-	    on the x-axis indicate threshold z-values for \code{fdr <=
-	    0.2}. plot=2 also gives plot of fdr, and the right and
-	    left tail area Fdr curves; plot=3 gives instead the f1 cdf
-	    of the estimated fdr curve, as in figure 4 of the second
-	    reference; plot=4 gives all three plots.}
+	    densities \eqn{f} and \eqn{p0*f0}.
+	    2 also gives plot of fdr, and the right and
+	    left tail area Fdr curves.  3 gives instead the f1 cdf
+	    of the estimated fdr curve; plot=4 gives all three plots.}
 
 \item{mult}{Optional scalar multiple (or vector of multiples) of the
 	    sample size for calculation of the corresponding
 	    hypothetical Efdr value(s).}
+	  
+\item{mlests}{Optional vector of initial values for (delta0, sigma0) in
+  the maximum likelihood iteration.}
 
 \item{main}{Main heading for the histogram plot when \code{plot>0}.}
 
-\item{sw}{Determines the type of output desired.  \eqn{sw=2} gives a list
-	  consisting of the last 5 values listed below. \eqn{sw=3} gives
-	  the square matrix of dimension bre-1 representing the influence
-	  function of log(fdr), i.e. the derivative of log(fdr) (for
-	  each bin) with respect to the bin counts.  Any other value
+\item{sw}{Determines the type of output desired.  2 gives a list
+  consisting of the last 5 values listed under Value below.
+  3 gives the square matrix of dimension bre-1 representing the influence
+	  function of log(fdr).  Any other value
 	  of sw returns a list consisting of the first 5 (6 if mult is
 	  supplied) values listed below.}
-}
+}}
+      
 
 \details{
-	The standard error estimate lfdrse assumes independence of the
-	\eqn{zz} values and should usually be considered as a lower bound on
-	the true standard errors. See the third reference.
-
-	The density estimates f, f0, f0theo are scaled to add up to
-	approximately the number of \eqn{zz}'s. The non-null density
-	f1 is scaled to add up to approximately (1-p0) times the number of
-	\eqn{zz}'s. i.e. the estimated number of non-null \eqn{zz}'s.	
+  See the locfdr vignette for details and tips.
 }
 
 \value{
 \item{fdr}{the estimated local false discovery rate for each case,
-	using the selected options for type and nulltype.}
+	using the selected type and nulltype.}
 
 \item{fp0}{the estimated parameters delta (mean of f0), sigma
 	(standard deviation of f0), and p0, along with
-	their standard errors.  If \code{nulltype<3}, fp0 is a 5 by 3 matrix,
-	with columns representing delta, sigma, and p0 and rows
-	representing nulltypes and estimate vs. standard error.  If
-	\code{nulltype==3}, a fourth column represents the sigma estimate for
-	the right side of f0.}
+	their standard errors.}
 
 \item{Efdr}{the expected false discovery rate for the non-null cases,
 	a measure of the experiment's power as described in Section 3
-	of the second reference. Large values of Efdr, say \code{Efdr>0.4},
-	indicate low power. Overall Efdr and right and left values are
+	of the second reference.  Overall Efdr and right and left values are
 	given, both for the specified nulltype and for nulltype 0.  If
 	\code{nulltype==0}, values are given for nulltypes 1 and 0.}
 
 \item{cdf1}{a 99x2 matrix giving the estimated cdf of fdr under the
 	non-null distribution f1. Large values of the cdf for small fdr
 	values indicate good power; see Section 3 of the second
-	reference.  Set plot to 3 or 4 to see the cdf plot.}
+	reference.  Set plot to 3 or 4 to see the cdf1 plot.}
 
-\item{mat}{A matrix summarizing the estimates of \eqn{f(z)},
-	\eqn{f0(z)}, \eqn{fdr(z)}, etc. at the \eqn{bre-1} midpoints "x"
-	of the break discretization. These are convenient for
-	comparisons and plotting; mat includes fdr from nulltype 1, 2,
-	or 3 as specified, estimates of the usual tail-area False
-	Discovery Rates, Fdrleft and Fdrright, and also fdrtheo and
-	f0theo, the fdr and f0 estimates assuming the theoretical null
-	density \eqn{N(0,1)}. If \code{nulltype==0}, the fdr and f0
-	columns of mat are calculated using nulltype 1. The 10th column
-	of mat, "lfdrse", is an estimate of standard error for the curve
-	log(fdr) and is calculated based on the specified nulltype. The
-	11th column of mat is an estimate p1f1 of the subdensity for
-	the non-null \eqn{z}-scores. Column "counts" gives the histogram
-	counts for \eqn{zz}.}
+\item{mat}{A matrix of estimates of \eqn{f(x)},
+	\eqn{f0(x)}, \eqn{fdr(x)}, etc. at the \eqn{bre-1} midpoints "x"
+	of the break discretization, convenient for comparisons and
+	plotting.  Details are in the locfdr vignette.}
+
+\item{z.2}{the interval along the zz-axis outside of which $fdr(z)<0.2$,
+	the locations of the yellow triangles in the histogram plot.  If
+	no elements of zz on the left or right satisfy the criterion,
+	the corresponding element of z.2 is NA.}
+
+\item{call}{the function call.}
 
 \item{mult}{If the argument mult was supplied, vector of the ratios of
 	    hypothetical Efdr for the supplied multiples of the sample
@@ -168,7 +125,8 @@ locfdr(zz, bre=120, df=7, pct=0, pct0=1/4, nulltype=1, type=0, plot=1,
 	    respect to the bin counts.}
 
 \item{stdev}{The delta-method estimates of the standard deviations of
-	     the p0, delta, and sigma estimates.}
+  the p0, delta, and sigma estimates.}
+
 }
 
 \references{
@@ -184,7 +142,7 @@ locfdr(zz, bre=120, df=7, pct=0, pct0=1/4, nulltype=1, type=0, plot=1,
 }
 
 
-\author{Bradley Efron}
+\author{Bradley Efron, Brit B. Turnbull, and Balasubramanian Narasimhan}
 
 \examples{
 ## HIV data example

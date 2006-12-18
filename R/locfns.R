@@ -4,57 +4,62 @@
 
 .onLoad <- function(lib, pkg) require(splines)
 
-locmle = 
-function(z, xlim = c(0,2), Jmle = 35, d = 0, s = 1, ep = 1/100000, sw = 0, Cov.in)
+locmle <-
+function(z, xlim , Jmle = 35, d = 0, s = 1, ep = 1/100000, sw = 0, Cov.in)
 {
-	## uses z-values in [-xlim,xlim] to find mles for p0,del0,sig0
-	## Jmle number of iterations, beginning at (del0,sig0)=(d,s)
-	## sw=1 returns correlation matrix
-	N = length(z)
+        ## uses z-values in [-xlim,xlim] to find mles for p0,del0,sig0
+        ## Jmle number of iterations, beginning at (del0,sig0)=(d,s)
+        ## sw=1 returns correlation matrix
+        N = length(z)
+        if (missing(xlim)) {
+          b=3.55-.44*log(N,10)
+          xlim=c(median(z),b*diff(quantile(z)[c(2,4)])/(2*qnorm(.75)))
+        }
         aorig=xlim[1]-xlim[2]
         borig=xlim[1]+xlim[2]
 
         z0=z[z>=aorig & z<=borig]
-	N0 = length(z0)
-	Y = c(mean(z0), mean(z0^2))
-	that = N0/N
-	######## find mle estimates ###########################
-	for(j in 1:Jmle) {
-		bet = c(d/s^2, -1/(2 * s^2))
-		aa = (aorig - d)/s
-		bb = (borig - d)/s
-		H0 = pnorm(bb) - pnorm(aa)
-		fa = dnorm(aa)
-		fb = dnorm(bb)
-		H1 = fa - fb
-		H2 = H0 + aa * fa - bb * fb
-		H3 = (2 + aa^2) * fa - (2 + bb^2) * fb
-		H4 = 3 * H0 + (3 * aa + aa^3) * fa - (3 * bb + bb^3) * fb
-		H = c(H0, H1, H2, H3, H4)
-		r = d/s
-		I = matrix(rep(0, 25), 5)
-		for(i in 0:4)
-			I[i + 1, 0:(i + 1)] = choose(i, 0:i)
-		u1 = s^(0:4)
-		II = pmax(row(I) - col(I), 0)
-		II = r^II
-		I = u1 * (I * II)
-		E = as.vector(I %*% H)/H0
-		E1 = E[2]
-		E2 = E[3]
-		E3 = E[4]
-		E4 = E[5]
-		mu = c(E1, E2)
-		V = matrix(c(E2 - E1^2, E3 - E1 * E2, E3 - E1 * E2, E4 -
-			E2^2), 2)
-		bett = bet + solve(V, Y - mu)/(1 + 1/j^2)
+        N0 = length(z0)
+        Y = c(mean(z0), mean(z0^2))
+        that = N0/N
+        ######## find mle estimates ###########################
+        for(j in 1:Jmle) {
+                bet = c(d/s^2, -1/(2 * s^2))
+                aa = (aorig - d)/s
+                bb = (borig - d)/s
+                H0 = pnorm(bb) - pnorm(aa)
+                fa = dnorm(aa)
+                fb = dnorm(bb)
+                H1 = fa - fb
+                H2 = H0 + aa * fa - bb * fb
+                H3 = (2 + aa^2) * fa - (2 + bb^2) * fb
+                H4 = 3 * H0 + (3 * aa + aa^3) * fa - (3 * bb + bb^3) * fb
+                H = c(H0, H1, H2, H3, H4)
+                r = d/s
+                I = matrix(rep(0, 25), 5)
+                for(i in 0:4)
+                        I[i + 1, 0:(i + 1)] = choose(i, 0:i)
+                u1 = s^(0:4)
+                II = pmax(row(I) - col(I), 0)
+                II = r^II
+                I = u1 * (I * II)
+                E = as.vector(I %*% H)/H0
+                E1 = E[2]
+                E2 = E[3]
+                E3 = E[4]
+                E4 = E[5]
+                mu = c(E1, E2)
+                V = matrix(c(E2 - E1^2, E3 - E1 * E2, E3 - E1 * E2, E4 -
+                        E2^2), 2)
+                bett = bet + solve(V, Y - mu)/(1 + 1/j^2)
+                if(bett[2]>0)bett=bet+.1*solve(V, Y - mu)/(1 + 1/j^2)
                 if (is.na(bett[2])) break
                 else if (bett[2]>=0) break
-		d =  - bett[1]/(2 * bett[2])
-		s = 1/sqrt(-2 * bett[2])
-		if(sum((bett - bet)^2)^0.5 < ep)
-			break
-	}
+                d =  - bett[1]/(2 * bett[2])
+                s = 1/sqrt(-2 * bett[2])
+                if(sum((bett - bet)^2)^0.5 < ep)
+                        break
+        }
         if (is.na(bett[2])) {
           mle = rep(NA, 6)
           Cov.lfdr = NA
@@ -66,34 +71,34 @@ function(z, xlim = c(0,2), Jmle = 35, d = 0, s = 1, ep = 1/100000, sw = 0, Cov.i
           Cor = matrix(NA, 3, 3)
         }
         else {
-	  aa = (aorig - d)/s
-	  bb = (borig - d)/s
-	  H0 = pnorm(bb) - pnorm(aa)
+          aa = (aorig - d)/s
+          bb = (borig - d)/s
+          H0 = pnorm(bb) - pnorm(aa)
           p0 = that/H0
           ############  sd calcs ###########################
-	  J = s^2 * matrix(c(1, 0, 2 * d, s), 2)
-	  JV = J %*% solve(V)
-	  JVJ = JV %*% t(J)
-	  mat2 = cbind(0, JVJ/N0)
-	  mat1 = c((p0 * H0 * (1 - p0 * H0))/N, 0, 0)
-	  mat = rbind(mat1, mat2)
-	  h = c(H1/H0, (H2 - H0)/H0)
-	  matt = c(1/H0,  - (p0/s) * t(h))
-	  matt = rbind(matt, cbind(0, diag(2)))
-	  C = matt %*% (mat %*% t(matt))
-	  mle = c(p0, d, s, diag(C)^0.5)
-	  if(sw == 1) {
-		sd = mle[4:6]
-		Co = C/outer(sd, sd)
-		dimnames(Co) = list(c("p0", "d", "s"), c("p0", "d", "s"))
-		Cor = Co[c(2, 3, 1), c(2, 3, 1)]
-	  }
+          J = s^2 * matrix(c(1, 0, 2 * d, s), 2)
+          JV = J %*% solve(V)
+          JVJ = JV %*% t(J)
+          mat2 = cbind(0, JVJ/N0)
+          mat1 = c((p0 * H0 * (1 - p0 * H0))/N, 0, 0)
+          mat = rbind(mat1, mat2)
+          h = c(H1/H0, (H2 - H0)/H0)
+          matt = c(1/H0,  - (p0/s) * t(h))
+          matt = rbind(matt, cbind(0, diag(2)))
+          C = matt %*% (mat %*% t(matt))
+          mle = c(p0, d, s, diag(C)^0.5)
+          if(sw == 1) {
+                sd = mle[4:6]
+                Co = C/outer(sd, sd)
+                dimnames(Co) = list(c("p0", "d", "s"), c("p0", "d", "s"))
+                Cor = Co[c(2, 3, 1), c(2, 3, 1)]
+          }
           if (!missing(Cov.in))
             Cov.out = loccov(N, N0, p0, d, s, Cov.in$x, Cov.in$X, Cov.in$f,
                               JV, Y, Cov.in$i0, H0, h, Cov.in$sw)        
         }
         names(mle) = c("p0", "del0", "sig0", "sd.p0", "sd.del0", "sd.sig0")
-	mle = mle[c(2, 3, 1, 5, 6, 4)]
+        mle = mle[c(2, 3, 1, 5, 6, 4)]
         out = list(mle=mle)
         if (sw==1) {
           Cor = list(Cor = Cor)
@@ -114,7 +119,7 @@ function(z, xlim = c(0,2), Jmle = 35, d = 0, s = 1, ep = 1/100000, sw = 0, Cov.i
           }
         }
         if ((sw==1) | !missing(Cov.in)) return(out)
-	else return(mle)
+        else return(mle)
 }
 
 loccov = function(N, N0, p0, d, s, x, X, f, JV, Y, i0, H0, h, sw) {
