@@ -94,27 +94,36 @@ function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type = 0, plo
 	}
 	lr <- lm(y0 ~ X00)
 	co <- lr$coef
-        if (is.na(co[3]) & nulltype == 3)
-          stop("CM estimation failed.  Rerun with nulltype = 1 or 2.")
-        else if (is.na(co[3]) & nulltype == 2)
-          stop("CM estimation failed.  Rerun with nulltype = 1.")
-        else if (!is.na(co[3])) if (co[3]<0) {
+        ## Error messages for failed CM estimation ##
+        cmerror = is.na(co[3])
+        if (!cmerror) cmerror = I(co[3] >= 0)
+        if (cmerror) {
+          if (nulltype == 3)
+            stop("CM estimation failed.  Rerun with nulltype = 1 or 2.")
+          else if (nulltype == 2)
+            stop("CM estimation failed.  Rerun with nulltype = 1.")
+          else {
+            X0 <- cbind(1, x - xmax, (x - xmax)^2)
+            warning("CM estimation failed, middle of histogram non-normal")
+          }
+        }
+        else {
 	  if(nulltype == 3) {
 		X0 <- cbind(1, (x - xmax)^2, pmax(x - xmax, 0)^2)
-		sigs <- 1/sqrt(-2 * (c(co[2], co[2] + co[3])))
+                sigs <- 1/sqrt(-2 * (c(co[2], co[2] + co[3])))
                 fp0["cmest", c(1,2,4)] <- c(xmax, sigs)
 	  }
 	  else {
 		X0 <- cbind(1, x - xmax, (x - xmax)^2)
-		xmaxx <-  - co[2.]/(2. * co[3.]) + xmax
-		sighat <- 1./sqrt(-2. * co[3.])
-		fp0["cmest", 1:2] <- c(xmaxx, sighat)
+                xmaxx <-  - co[2.]/(2. * co[3.]) + xmax
+                sighat <- 1./sqrt(-2. * co[3.])
+                fp0["cmest", 1:2] <- c(xmaxx, sighat)
 	  }
 	  l0 <- as.vector(X0 %*% co)
 	  f0 <- exp(l0)
 	  p0 <- sum(f0)/sum(f)
 	  f0 <- f0/p0
-	  fp0["cmest", 3] <- p0
+          fp0["cmest", 3] <- p0
         }
 	#............... begin MLE f0 calcs ........................
         b = 3.55 - 0.44*log(N, 10)
@@ -124,7 +133,7 @@ function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type = 0, plo
         }
 	if (!is.na(mlests[1])) {
             if (nulltype == 1) {
-              Cov.in = list(x=x, X=X, f=f, i0=i0, sw=sw)
+              Cov.in = list(x=x, X=X, f=f, sw=sw)
               ml.out = locmle(zz, xlim = c(mlests[1], b * mlests[2]),
                 d=mlests[1], s=mlests[2], Cov.in=Cov.in)
               mlests = ml.out$mle
@@ -138,22 +147,16 @@ function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type = 0, plo
           if(abs(fp0["cmest",1] - mlests[1]) > 0.050000000000000003 |
              abs(log(fp0["cmest",2]/mlests[2])) > 0.050000000000000003)
 		warning("Discrepancy between central matching and maximum likelihood estimates.\nConsider rerunning with nulltype = 1")
-        ## Error messages for Beta2>=0 ##
-        if (is.na(co[3]) & is.na(mlests[1]) & nulltype==1)
-          stop("CM and ML Estimation failed, middle of histogram non-normal")
-        if (is.na(mlests[1]) & nulltype==0)
-          warning("ML Estimation failed")
-        if (nulltype>0) if (co[3]>=0) {
-          if (is.na(mlests[1]))
-            stop("CM and ML Estimation failed, middle of histogram non-normal")
-          else if (nulltype==3)
-            stop("CM estimation failed.  Rerun with nulltype = 1 or 2.")
-          else if (nulltype==2)
-            stop("CM estimation failed.  Rerun with nulltype = 1.")
+        ## Error messages for failed ML estimation ##
+        if (is.na(mlests[1])) {
+          if (nulltype == 1) {
+            if (is.na(fp0["cmest", 1]))
+              stop("CM and ML Estimation failed, middle of histogram non-normal")
+            else stop("ML estimation failed.  Rerun with nulltype=2")
+          }
+          else warning("ML Estimation failed")
         }
 	if(nulltype < 2) {
-                if (nulltype==1 & is.na(mlests[1]) & co[3]<0)
-                  stop("ML estimation failed.  Rerun with nulltype=2")
 		delhat = xmax = xmaxx = mlests[1]
 		sighat = mlests[2]
 		p0 = mlests[3]
@@ -263,20 +266,20 @@ function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type = 0, plo
           if (nulltype==0) {
              pds = fp0["thest", c(3,1,2)]
              stdev = fp0["theSD", c(3,1,2)]
-             pds. = Cov0.out$pds.
+             pds. = t(Cov0.out$pds.)
           }
           else if (nulltype==1) {
             pds = fp0["mlest",c(3,1,2)]
             stdev = fp0["mleSD",c(3,1,2)]
-            pds. = ml.out$pds.
+            pds. = t(ml.out$pds.)
           }
           else if (nulltype==2) {
             pds = fp0["cmest",c(3,1,2)]
             stdev = fp0["cmeSD", c(3,1,2)]
-            pds. = Cov2.out$pds.
+            pds. = t(Cov2.out$pds.)
           }
           else stop("With sw=2, nulltype must equal 0, 1, or 2.")
-          rownames(pds.) = names(pds) = c("p0", "delhat", "sighat")
+          colnames(pds.) = names(pds) = c("p0", "delhat", "sighat")
           names(stdev) = c("sdp0", "sddelhat", "sdsighat")
 	  return(list(pds=pds, x=x, f=f, pds.=pds., stdev=stdev))
         }
@@ -317,8 +320,7 @@ function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type = 0, plo
 		################### make yt positive ##############
 		yt <- pmax(yall * (1 - fd), 0)
 		for(k in 1:K)
-			lines(c(x[k], x[k]), c(0, yt[k]), lwd = 2, col = 6
-				)
+		  lines(c(x[k], x[k]), c(0, yt[k]), lwd = 2, col = 6)
 		if(nulltype == 3)
 			title(xlab = paste("delta=", round(xmax, 3),
 				"sigleft=", round(sigs[1], 3), 
@@ -335,9 +337,8 @@ function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type = 0, plo
 		lines(x, f, lwd = 3, col = 3)
 		if(nulltype == 0)
 			lines(x, p0theo*f00, lwd = 2, lty = 2, col = 4)
-		else {
+		else
 			lines(x, p0*f0, lwd = 2, lty = 2, col = 4)
-		}
                 ################## Plot triangles ###############
                 if (!is.na(z.2[2]))
 		   points(z.2[2], -0.5, pch = 24, col="red", bg="yellow")
@@ -350,7 +351,7 @@ function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type = 0, plo
 			if(nulltype == 0)
 				fdd <- fdr0
 			else fdd = fdr
-			matplot(x, cbind(fdr, Fdrl, Fdrr), type = "l",
+			matplot(x, cbind(fdd, Fdrl, Fdrr), type = "l",
 				lwd = 3, xlab = " ", ylim = c(0, 
 				1.1000000000000001), main = 
 				"fdr (solid); Fdr's (dashed)")

@@ -199,8 +199,10 @@ sw determines the type of output desired.
           consisting of the last 5 values listed under Value below.
 \item 3 gives
           the square matrix of dimension bre-1 representing the influence
-          function of $\log(fdr)$, i.e. the derivative of $\log(fdr)$ (for
-          each bin) with respect to the bin counts.
+          function of $\log(fdr)$.  The
+          $(i,j)$ entry of the matrix is the derivative of
+          $\log(fdr)$ at the midpoint of bin $i$ with respect to the
+          count value of bin $j$.
 \item Any other value
           of sw returns a list consisting of the first 7 (8 if mult is
           supplied) values listed below.
@@ -300,9 +302,7 @@ f is the vector of estimated values of $f(x)$ at the bin midpoints.
 
 \subsection{pds.}
 
-pds. is the derivative of the estimates of p0 (when
-            \texttt{nulltype==1}) or \texttt{log(p0)} (when
-            \texttt{nulltype==0} or \texttt{2}), delta, and sigma with
+pds. is the derivative of the estimates of p0, delta, and sigma with
             respect to the bin counts.
 
 \subsection{stdev}

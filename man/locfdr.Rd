@@ -119,9 +119,7 @@ locfdr(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type =
 
 \item{f}{The values of \eqn{f(z)} at the bin midpoints.}
 
-\item{pds.}{The derivative of the estimates of p0 (when
-	    \code{nulltype==1}) or \code{log(p0)} (when
-	    \code{nulltype==0} or \code{2}), delta, and sigma with
+\item{pds.}{The derivative of the estimates of p0, delta, and sigma with
 	    respect to the bin counts.}
 
 \item{stdev}{The delta-method estimates of the standard deviations of

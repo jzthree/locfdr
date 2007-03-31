@@ -17,8 +17,7 @@ function(z, xlim , Jmle = 35, d = 0, s = 1, ep = 1/100000, sw = 0, Cov.in)
         }
         aorig=xlim[1]-xlim[2]
         borig=xlim[1]+xlim[2]
-
-        z0=z[z>=aorig & z<=borig]
+        z0=z[which(z>=aorig & z<=borig)]
         N0 = length(z0)
         Y = c(mean(z0), mean(z0^2))
         that = N0/N
@@ -67,7 +66,7 @@ function(z, xlim , Jmle = 35, d = 0, s = 1, ep = 1/100000, sw = 0, Cov.in)
         }
         else if (bett[2] >=0)  {
           mle = rep(NA, 6)
-          Cov.lfdr = NA
+          Cov.lfdr = Cov.out = NA
           Cor = matrix(NA, 3, 3)
         }
         else {
@@ -93,9 +92,11 @@ function(z, xlim , Jmle = 35, d = 0, s = 1, ep = 1/100000, sw = 0, Cov.in)
                 dimnames(Co) = list(c("p0", "d", "s"), c("p0", "d", "s"))
                 Cor = Co[c(2, 3, 1), c(2, 3, 1)]
           }
-          if (!missing(Cov.in))
+          if (!missing(Cov.in)) {
+            i0 = which(Cov.in$x > aa & Cov.in$x < bb)
             Cov.out = loccov(N, N0, p0, d, s, Cov.in$x, Cov.in$X, Cov.in$f,
-                              JV, Y, Cov.in$i0, H0, h, Cov.in$sw)        
+                             JV, Y, i0, H, h, Cov.in$sw)
+          }
         }
         names(mle) = c("p0", "del0", "sig0", "sd.p0", "sd.del0", "sd.sig0")
         mle = mle[c(2, 3, 1, 5, 6, 4)]
@@ -122,38 +123,36 @@ function(z, xlim , Jmle = 35, d = 0, s = 1, ep = 1/100000, sw = 0, Cov.in)
         else return(mle)
 }
 
-loccov = function(N, N0, p0, d, s, x, X, f, JV, Y, i0, H0, h, sw) {
-  K = length(x)
-  K0 = length(i0)
-  
-  B = c(1/p0, 0, 0, -d/s^2, 1/s^2, 0, d/s^3 - 1/s^2, -2*d/s^3, 1/s^3)
-  B = matrix(B, 3, 3)
-  M = rbind(1, x, x^2)
-  dl0plus.dpds = t(M) %*% B
-  
-  toprow = c(1 - N0/N, t(h) %*% JV / s)
-  botrow = cbind(0, JV / p0)
-  mat = rbind(toprow, botrow)
-  M0 = M[,i0]
-  Yrep = matrix(c(0, Y), 3, K0)
-  M0tilde = M0 - Yrep
-  dpds.dy0 = mat %*% M0tilde / N / H0
-  
-  dy0.dy = matrix(0, K0, K)
-  dy0.dy[,i0] = diag(1, K0)
-
-  dpds.dy = dpds.dy0 %*% dy0.dy
-  rownames(dpds.dy) = c("p", "d", "s")
-  
-  G <- t(X) %*% (f * X)
-  dl.dy = X %*% solve(G) %*% t(X)
-
-  dlfdr.dy = dl0plus.dpds %*% dpds.dy - dl.dy
-
-  Cov.lfdr = dlfdr.dy %*% (f * t(dlfdr.dy))
-  if (sw==2) return(dpds.dy)
-  else if (sw==3) return(dlfdr.dy)
-  else return(Cov.lfdr)
+loccov = function(N, N0, p0, d, s, x, X, f, JV, Y, i0, H, h, sw) {
+  M = rbind(1, x - Y[1], x^2 - Y[2])
+  if (sw==2) {
+    K = length(x)
+    K0 = length(i0)    
+    toprow = c(1 - N0/N, -t(h) %*% JV / s)
+    botrow = cbind(0, JV / p0)
+    mat = rbind(toprow, botrow)
+    M0 = M[,i0]
+    dpds.dy0 = mat %*% M0 / N / H[1]
+    dy0.dy = matrix(0, K0, K)
+    dy0.dy[,i0] = diag(1, K0)
+    dpds.dy = dpds.dy0 %*% dy0.dy
+    rownames(dpds.dy) = c("p", "d", "s")
+    return(dpds.dy)
+  }
+  else {
+    xstd = (x - d)/s
+    U = cbind(xstd - H[2]/H[1], xstd^2 - H[3]/H[1])
+    M[,-i0] = 0
+    dl0plus.dy = cbind(1 - N0/N, U %*% JV / s) %*% M /N/H[1]/p0  
+    G <- t(X) %*% (f * X)
+    dl.dy = X %*% solve(G) %*% t(X)
+    dlfdr.dy = dl0plus.dy - dl.dy
+    if (sw==3) return(dlfdr.dy)
+    else {
+      Cov.lfdr = dlfdr.dy %*% (f * t(dlfdr.dy))
+      return(Cov.lfdr)
+    }
+  }
 }
 
 loccov2 = function(X, X0, i0, f, ests, N) {
@@ -181,5 +180,7 @@ loccov2 = function(X, X0, i0, f, ests, N) {
 	m2 = pds.^2 %*% f
 	stdev = as.vector(sqrt(m2 - m1^2/N))
 	stdev[1] = p0 * stdev[1]
+        pds.[1,] = p0 * pds.[1,]
+        rownames(pds.) = c("p", "d", "s")
         list(Ilfdr = Ilfdr, pds.=pds., stdev=stdev, Cov=Cov)
 }
