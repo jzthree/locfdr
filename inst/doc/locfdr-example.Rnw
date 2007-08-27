@@ -392,8 +392,7 @@ therefore smaller than the local fdr cutoff.
 \bibitem{size} Efron, B. (2006) ``Size, Power, and False Discovery Rates,''\\
 \texttt{http://www-stat.stanford.edu/}$\tilde{\mbox{\,\,\,\,\,}}$\texttt{brad/papers/Size.pdf}
 \bibitem{cor} Efron, B. (2006) ``Correlation and Large-Scale Simultaneous
-  Significance Testing,''\\
-\texttt{http://www-stat.stanford.edu/}$\tilde{\mbox{\,\,\,\,\,}}$\texttt{brad/papers/Correlation-2006.pdf}
+  Significance Testing,'' \textit{JASA}, \textbf{102}, pp. 93--103.
 \end{thebibliography}
 
 \end{document}

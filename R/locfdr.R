@@ -95,12 +95,19 @@ function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type = 0, plo
 	lr <- lm(y0 ~ X00)
 	co <- lr$coef
         ## Error messages for failed CM estimation ##
-        cmerror = is.na(co[3])
-        if (!cmerror) cmerror = I(co[3] >= 0)
+        if (nulltype == 3) {
+          cmerror = I(is.na(co[3]) | is.na(co[2]))
+          if (!cmerror) cmerror = I(co[2] >= 0 | co[2]+co[3]>=0)
+        }
+        else {
+          cmerror = is.na(co[3])
+          if (!cmerror) cmerror = I(co[3] >= 0)
+        }
         if (cmerror) {
           if (nulltype == 3)
             stop("CM estimation failed.  Rerun with nulltype = 1 or 2.")
-          else if (nulltype == 2)
+          else
+            if (nulltype == 2)
             stop("CM estimation failed.  Rerun with nulltype = 1.")
           else {
             X0 <- cbind(1, x - xmax, (x - xmax)^2)
@@ -132,7 +139,7 @@ function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type = 0, plo
           mlests = locmle(zz, xlim=c(med, b*sc))
         }
 	if (!is.na(mlests[1])) {
-            if (nulltype == 1) {
+          if (nulltype == 1) {
               Cov.in = list(x=x, X=X, f=f, sw=sw)
               ml.out = locmle(zz, xlim = c(mlests[1], b * mlests[2]),
                 d=mlests[1], s=mlests[2], Cov.in=Cov.in)

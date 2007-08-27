@@ -133,8 +133,8 @@ locfdr(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type =
   
   Efron, B. (2006) "Size, Power, and False Discovery Rates"
   
-  Efron, B. (2006) "Correlation and Large-Scale Simultaneous Significance
-  Testing"
+  Efron, B. (2007) "Correlation and Large-Scale Simultaneous Significance
+  Testing", Jour Amer Stat Assoc, \bold{102}, pp. 93--103
   
   \url{http://www-stat.stanford.edu/~brad/papers/}
 }
