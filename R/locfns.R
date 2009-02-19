@@ -12,7 +12,8 @@ function(z, xlim , Jmle = 35, d = 0, s = 1, ep = 1/100000, sw = 0, Cov.in)
         ## sw=1 returns correlation matrix
         N = length(z)
         if (missing(xlim)) {
-          b=3.55-.44*log(N,10)
+          if (N>500000) b = 1
+          else b=4.3 * exp(-0.26*log(N,10)) 
           xlim=c(median(z),b*diff(quantile(z)[c(2,4)])/(2*qnorm(.75)))
         }
         aorig=xlim[1]-xlim[2]

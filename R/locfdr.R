@@ -133,12 +133,17 @@ function(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type = 0, plo
           fp0["cmest", 3] <- p0
         }
 	#............... begin MLE f0 calcs ........................
-        b = 3.55 - 0.44*log(N, 10)
+        b = 4.3 * exp(-0.26*log(N,10))
         if(missing(mlests)){
           med = median(zz);sc=diff(quantile(zz)[c(2,4)])/(2*qnorm(.75))
           mlests = locmle(zz, xlim=c(med, b*sc))
+          if (N>500000) {
+            warning("length(zz) > 500,000: For ML estimation, a wider interval than optimal was used.  To use the optimal interval, rerun with mlests = c(", mlests[1], ", ", b * mlests[2], ").\n", sep="")
+            mlests = locmle(zz, xlim=c(med, sc))
+          }
         }
 	if (!is.na(mlests[1])) {
+          if (N>500000) b = 1
           if (nulltype == 1) {
               Cov.in = list(x=x, X=X, f=f, sw=sw)
               ml.out = locmle(zz, xlim = c(mlests[1], b * mlests[2]),

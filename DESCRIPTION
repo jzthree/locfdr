@@ -1,9 +1,9 @@
 Package: locfdr
 Title: Computes local false discovery rates
-Version: 1.1-5
+Version: 1.1-6
 Author: Bradley Efron, Brit B. Turnbull and Balasubramanian Narasimhan
 Description: Computation of local false discovery rates
 Maintainer: Bradley Efron <brad@stat.Stanford.EDU>
 License: GPL 2.0
 Depends: splines
-Packaged: Mon Aug 27 02:16:05 2007; bkatzen
+Packaged: Thu Feb 19 14:22:53 2009; hornik
