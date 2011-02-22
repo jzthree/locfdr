@@ -71,7 +71,7 @@ locfdr(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type =
 	  function of log(fdr).  Any other value
 	  of sw returns a list consisting of the first 5 (6 if mult is
 	  supplied) values listed below.}
-}}
+}
       
 
 \details{
