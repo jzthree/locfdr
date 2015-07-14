@@ -136,7 +136,7 @@ locfdr(zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, type =
   Efron, B. (2007) "Correlation and Large-Scale Simultaneous Significance
   Testing", Jour Amer Stat Assoc, \bold{102}, pp. 93--103
   
-  \url{http://www-stat.stanford.edu/~brad/papers/}
+  \url{http://statweb.stanford.edu/~ckirby/brad/papers/}
 }
 
 

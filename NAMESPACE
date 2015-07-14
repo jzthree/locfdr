@@ -1,1 +1,4 @@
 export(locfdr)
+import(splines)
+import(graphics)
+import(stats)

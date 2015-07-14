@@ -1,0 +1,14 @@
+4e012dadfb7f3ab4336ee3f48c26263d *DESCRIPTION
+6ebefc860c24e460619ea866e0c8c8eb *NAMESPACE
+d51d8a5b61f5637d14bbef41e5da50f5 *R/locfdr.R
+8d80d01ac0ef8d8aba97bf4914b92be7 *R/locfns.R
+a017fd81f33bacc4c3d7a9dada2b0041 *build/vignette.rds
+bb387c08a8576b5c98cd099a769c7fde *data/hivdata.rda
+20f07560e29274400595d9ba40c569bd *data/lfdrsim.rda
+592125115156ad39f3b2420efb5f96b9 *inst/doc/locfdr-example.R
+50ee53dfe4f2f5d59f3e09d5e44922ee *inst/doc/locfdr-example.Rnw
+7dfa796937437e5b29d6a3f172b2de29 *inst/doc/locfdr-example.pdf
+8a185289ddc3e94524a5ab58fa1a8136 *man/hivdata.Rd
+e3c4ab3f507d850553a235df14ac4460 *man/lfdrsim.Rd
+d2447091be3b600888c80746a5cd71c2 *man/locfdr.Rd
+50ee53dfe4f2f5d59f3e09d5e44922ee *vignettes/locfdr-example.Rnw
