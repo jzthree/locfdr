@@ -1,6 +1,6 @@
 4e012dadfb7f3ab4336ee3f48c26263d *DESCRIPTION
 6ebefc860c24e460619ea866e0c8c8eb *NAMESPACE
-d51d8a5b61f5637d14bbef41e5da50f5 *R/locfdr.R
+e36bd9678759bb32a6447a8876e2e293 *R/locfdr.R
 8d80d01ac0ef8d8aba97bf4914b92be7 *R/locfns.R
 a017fd81f33bacc4c3d7a9dada2b0041 *build/vignette.rds
 bb387c08a8576b5c98cd099a769c7fde *data/hivdata.rda
