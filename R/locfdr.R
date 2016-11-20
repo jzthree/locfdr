@@ -1,4 +1,4 @@
-function (zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, 
+locfdr <- function (zz, bre = 120, df = 7, pct = 0, pct0 = 1/4, nulltype = 1, 
     type = 0, plot = 1, mult, mlests, main = " ", sw = 0, LRfdr=False) 
 {
     call = match.call()
